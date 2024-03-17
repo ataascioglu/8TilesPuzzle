@@ -1,22 +1,21 @@
 import java.util.*;
 
-// A class that implements the A* search algorithm to solve the 8 puzzle problem.
 public class Solver {
     // A* search algorithm
     public static void solve(Board initialBoard) {
         PriorityQueue<State> pq = new PriorityQueue<>(); // Priority queue to store states
         Set<Board> visited = new HashSet<>(); // Set to keep track of visited boards
-        Map<Board, State> cameFrom = new HashMap<>(); // Map to store the parent state for each board
+        Map<Board, State> parentMap = new HashMap<>(); // Map to store parent-child relationships for backtracking
 
         pq.add(new State(initialBoard, 0)); // Add initial state to the priority queue
-        cameFrom.put(initialBoard, null); // Mark the initial board's parent as null
 
         while (!pq.isEmpty()) { // Continue until priority queue is empty
             State current = pq.poll(); // Retrieve and remove the state with the lowest priority
             Board currentBoard = current.board; // Retrieve the board from the current state
 
             if (currentBoard.isGoal()) { // Check if the current board is the goal state
-                printSolution(current, cameFrom); // Print the solution
+                System.out.println("Solution found in " + current.moves + " moves"); // Print the number of moves required to reach the goal
+                drawSolutionPath(parentMap, current); // Draw the solution path
                 return; // Exit the method
             }
 
@@ -25,8 +24,9 @@ public class Solver {
             // Generate possible moves from the current board
             for (Board neighbor : currentBoard.neighbors()) {
                 if (!visited.contains(neighbor)) { // Check if the neighbor has not been visited
-                    pq.add(new State(neighbor, current.moves + 1)); // Add the neighbor to the priority queue with an updated move count
-                    cameFrom.put(neighbor, current); // Store the parent state for the neighbor
+                    State newState = new State(neighbor, current.moves + 1);
+                    pq.add(newState); // Add the neighbor to the priority queue with an updated move count
+                    parentMap.put(neighbor, current); // Store the parent-child relationship for backtracking
                 }
             }
         }
@@ -34,20 +34,26 @@ public class Solver {
         System.out.println("No solution found."); // Print a message if no solution is found
     }
 
-    // Method to print the solution
-    private static void printSolution(State current, Map<Board, State> cameFrom) {
-        List<State> solution = new ArrayList<>(); // List to store the sequence of moves
-        while (current != null) {
-            solution.add(current); // Add the current state to the solution list
-            current = cameFrom.get(current.board); // Move to the parent state
+    // Method to draw the solution path
+    private static void drawSolutionPath(Map<Board, State> parentMap, State finalState) {
+        List<Board> path = new ArrayList<>();
+        State currentState = finalState;
+
+        // Backtrack from the final state to the initial state
+        while (currentState != null) {
+            path.add(currentState.board);
+            currentState = parentMap.get(currentState.board);
         }
 
-        // Print the solution in reverse order
-        System.out.println("Solution found in " + (solution.size() - 1) + " moves"); // -1 because initial state is not a move
-        for (int i = solution.size() - 1; i >= 0; i--) {
-            System.out.println("Move " + (solution.size() - i - 1) + ":");
-            solution.get(i).board.draw(); // Draw the board for each step
-            System.out.println(); // Add a newline for readability
+        // Draw each board configuration in the solution path
+        StdDraw.clear(); // Clear the canvas
+        for (int i = path.size() - 1; i >= 0; i--) {
+            path.get(i).draw(); // Draw the current board configuration
+            StdDraw.show(); // Show the drawing
+            if (i > 0) {
+                StdDraw.pause(500); // Pause for a short duration (500 milliseconds) between steps
+                StdDraw.clear(); // Clear the canvas for the next drawing
+            }
         }
     }
 
